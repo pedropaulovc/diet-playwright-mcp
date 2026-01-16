@@ -24,6 +24,7 @@ import install from './tools/install';
 import keyboard from './tools/keyboard';
 import mouse from './tools/mouse';
 import navigate from './tools/navigate';
+import navigateAndWait from './tools/navigateAndWait';
 import network from './tools/network';
 import pdf from './tools/pdf';
 import runCode from './tools/runCode';
@@ -47,6 +48,7 @@ export const browserTools: Tool<any>[] = [
   ...install,
   ...keyboard,
   ...navigate,
+  ...navigateAndWait,
   ...network,
   ...mouse,
   ...pdf,
