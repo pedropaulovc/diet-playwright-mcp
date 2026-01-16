@@ -35,12 +35,9 @@ const snapshotViewport = defineTool({
   handle: async (context, params, response) => {
     const tab = await context.ensureTab();
 
-    // Get the ARIA snapshot
-    const snapshot = await tab.page._snapshotForAI({ track: 'response' });
-
-    // For viewport-only, use incremental which is more focused on current view
-    // The full snapshot includes off-screen content
-    const viewportSnapshot = snapshot.incremental || snapshot.full;
+    // Take snapshot with viewport-only filtering enabled
+    const snapshotResult = await tab.page._snapshotForAI({ track: 'response', viewportOnly: true });
+    const viewportSnapshot = snapshotResult.full;
 
     if (params.filename) {
       const fileName = await response.addFile(params.filename, { origin: 'llm', reason: 'Saved viewport snapshot' });

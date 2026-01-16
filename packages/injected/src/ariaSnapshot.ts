@@ -39,6 +39,7 @@ let lastRef = 0;
 export type AriaTreeOptions = {
   mode: 'ai' | 'expect' | 'codegen' | 'autoexpect';
   refPrefix?: string;
+  viewportOnly?: boolean;
 };
 
 type InternalOptions = {
@@ -49,6 +50,7 @@ type InternalOptions = {
   renderCursorPointer?: boolean,
   renderActive?: boolean,
   renderStringsAsRegex?: boolean,
+  viewportOnly?: boolean,
 };
 
 function toInternalOptions(options: AriaTreeOptions): InternalOptions {
@@ -61,6 +63,7 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
       includeGenericRole: true,
       renderActive: true,
       renderCursorPointer: true,
+      viewportOnly: options.viewportOnly,
     };
   }
   if (options.mode === 'autoexpect') {
@@ -203,6 +206,9 @@ function computeAriaRef(ariaNode: aria.AriaNode, options: InternalOptions) {
   if (options.refs === 'none')
     return;
   if (options.refs === 'interactable' && (!ariaNode.box.visible || !ariaNode.receivesPointerEvents))
+    return;
+  // Skip elements not in viewport when viewportOnly mode is enabled
+  if (options.viewportOnly && !ariaNode.box.inViewport)
     return;
 
   const element = ariaNodeElement(ariaNode);

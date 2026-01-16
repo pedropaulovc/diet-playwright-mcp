@@ -108,26 +108,90 @@ export function isElementStyleVisibilityVisible(element: Element, style?: CSSSty
   return true;
 }
 
+function isElementClippedByAncestor(element: Element, elementRect: DOMRect): boolean {
+  // Check if element is clipped by any scrollable ancestor
+  let ancestor = element.parentElement;
+  while (ancestor) {
+    const style = getElementComputedStyle(ancestor);
+    if (!style) {
+      ancestor = ancestor.parentElement;
+      continue;
+    }
+
+    // Check both individual overflow properties and the shorthand
+    const overflowY = style.overflowY || style.overflow;
+    const overflowX = style.overflowX || style.overflow;
+    const hasScrollableY = overflowY === 'scroll' || overflowY === 'auto' || overflowY === 'hidden';
+    const hasScrollableX = overflowX === 'scroll' || overflowX === 'auto' || overflowX === 'hidden';
+
+    if (hasScrollableY || hasScrollableX) {
+      const ancestorRect = ancestor.getBoundingClientRect();
+
+      // An element is clipped if it's completely outside the ancestor's visible area
+      // We need to check if any part of the element is outside the ancestor's bounds
+      const isClippedVertically = hasScrollableY && (
+        elementRect.bottom <= ancestorRect.top ||
+        elementRect.top >= ancestorRect.bottom
+      );
+
+      const isClippedHorizontally = hasScrollableX && (
+        elementRect.right <= ancestorRect.left ||
+        elementRect.left >= ancestorRect.right
+      );
+
+      if (isClippedVertically || isClippedHorizontally) {
+        return true; // Element is completely clipped
+      }
+
+      // Additionally check if element is partially clipped (majority outside)
+      if (hasScrollableY) {
+        const visibleHeight = Math.min(elementRect.bottom, ancestorRect.bottom) - Math.max(elementRect.top, ancestorRect.top);
+        const totalHeight = elementRect.bottom - elementRect.top;
+        // If less than 50% of the element is visible, consider it clipped
+        if (totalHeight > 0 && visibleHeight / totalHeight < 0.5) {
+          return true;
+        }
+      }
+    }
+
+    ancestor = ancestor.parentElement;
+  }
+  return false; // Not clipped by any ancestor
+}
+
 export function computeBox(element: Element) {
   // Note: this logic should be similar to waitForDisplayedAtStablePosition() to avoid surprises.
   const style = getElementComputedStyle(element);
   if (!style)
-    return { visible: true, inline: false };
+    return { visible: true, inline: false, inViewport: false };
   const cursor = style.cursor;
   if (style.display === 'contents') {
     // display:contents is not rendered itself, but its child nodes are.
     for (let child = element.firstChild; child; child = child.nextSibling) {
       if (child.nodeType === 1 /* Node.ELEMENT_NODE */ && isElementVisible(child as Element))
-        return { visible: true, inline: false, cursor };
+        return { visible: true, inline: false, cursor, inViewport: false };
       if (child.nodeType === 3 /* Node.TEXT_NODE */ && isVisibleTextNode(child as Text))
-        return { visible: true, inline: true, cursor };
+        return { visible: true, inline: true, cursor, inViewport: false };
     }
-    return { visible: false, inline: false, cursor };
+    return { visible: false, inline: false, cursor, inViewport: false };
   }
   if (!isElementStyleVisibilityVisible(element, style))
-    return { cursor, visible: false, inline: false };
+    return { cursor, visible: false, inline: false, inViewport: false };
   const rect = element.getBoundingClientRect();
-  return { cursor, visible: rect.width > 0 && rect.height > 0, inline: style.display === 'inline' };
+  const visible = rect.width > 0 && rect.height > 0;
+
+  // Check viewport intersection
+  const inBrowserViewport = visible && (
+    rect.top < element.ownerDocument.defaultView!.innerHeight &&
+    rect.bottom > 0 &&
+    rect.left < element.ownerDocument.defaultView!.innerWidth &&
+    rect.right > 0
+  );
+
+  // Additionally check if element is clipped by scrollable ancestors
+  const inViewport = inBrowserViewport && !isElementClippedByAncestor(element, rect);
+
+  return { cursor, visible, inline: style.display === 'inline', inViewport };
 }
 
 export function isElementVisible(element: Element): boolean {
