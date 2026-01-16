@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP Tool Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .visible-content {
+            background: #e8f5e9;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #4caf50;
+        }
+        .below-fold {
+            margin-top: 1500px;
+            background: #fff3e0;
+            padding: 20px;
+            border: 2px solid #ff9800;
+        }
+        h1 { color: #2196f3; }
+        button {
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        .form-group {
+            margin: 15px 0;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="visible-content">
+        <h1>MCP Tool Test Page</h1>
+        <p>This page tests the new MCP tools:</p>
+        <ul>
+            <li>browser_navigate_then_wait_for</li>
+            <li>browser_snapshot_viewport</li>
+        </ul>
+
+        <h2>Test Form</h2>
+        <div class="form-group">
+            <label for="token">Personal Access Token:</label><br>
+            <input type="text" id="token" name="token" placeholder="Enter your token here">
+        </div>
+
+        <button id="submitBtn">Connect with PAT</button>
+        <button id="cancelBtn">Cancel</button>
+
+        <div id="status" style="margin-top: 20px; padding: 10px; background: #f5f5f5;"></div>
+    </div>
+
+    <div class="below-fold">
+        <h2>Content Below the Fold</h2>
+        <p>This content is below the viewport and should only appear in browser_snapshot, not browser_snapshot_viewport</p>
+        <ul>
+            <li>Item 1: Below fold content</li>
+            <li>Item 2: More below fold content</li>
+            <li>Item 3: Even more content</li>
+            <li>Item 4: package_lock.json</li>
+            <li>Item 5: artifact-download.ts</li>
+            <li>Item 6: README.md</li>
+        </ul>
+    </div>
+
+    <script>
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            const token = document.getElementById('token').value;
+            document.getElementById('status').textContent = 'Connected with token: ' + (token || 'none');
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('status').textContent = 'Cancelled';
+        });
+    </script>
+</body>
+</html>
