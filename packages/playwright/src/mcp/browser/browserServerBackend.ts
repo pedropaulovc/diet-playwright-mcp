@@ -51,7 +51,9 @@ export class BrowserServerBackend implements ServerBackend {
   }
 
   async listTools(): Promise<mcpServer.Tool[]> {
-    return this._tools.map(tool => toMcpTool(tool.schema));
+    return this._tools.map(tool => toMcpTool(tool.schema, {
+      minify: this._config.tools?.minify
+    }));
   }
 
   async callTool(name: string, rawArguments: mcpServer.CallToolRequest['params']['arguments']) {

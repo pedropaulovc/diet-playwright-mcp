@@ -29,6 +29,7 @@ import { BrowserServerBackend } from './browser/browserServerBackend';
 import { ExtensionContextFactory } from './extension/extensionContextFactory';
 
 import type { Command } from 'playwright-core/lib/utilsBundle';
+import type { FullConfig } from './browser/config';
 
 export function decorateCommand(command: Command, version: string) {
   command
@@ -72,6 +73,10 @@ export function decorateCommand(command: Command, version: string) {
       .option('--user-agent <ua string>', 'specify user agent string')
       .option('--user-data-dir <path>', 'path to the user data directory. If not specified, a temporary directory will be created.')
       .option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280x720"', resolutionParser.bind(null, '--viewport-size'))
+      .option('--minify-tools', 'strip descriptions and annotations from tool definitions to reduce token usage')
+      .option('--tool-allow-list <tools>', 'comma-separated list of tool names to make available', commaSeparatedList)
+      .option('--tool-deny-list <tools>', 'comma-separated list of tool names to exclude', commaSeparatedList)
+      .option('--list-tools [format]', 'output available tools and exit. Format: json (default), table, tsv')
       .addOption(new ProgramOption('--vision', 'Legacy option, use --caps=vision instead').hideHelp())
       .action(async options => {
         setupExitWatchdog();
@@ -82,6 +87,13 @@ export function decorateCommand(command: Command, version: string) {
         }
 
         const config = await resolveCLIConfig(options);
+
+        // Handle --list-tools option
+        if (options.listTools !== undefined) {
+          const format = (typeof options.listTools === 'string') ? options.listTools : 'json';
+          await listToolsAndExit(config, format);
+          return;
+        }
 
         // Chromium browsers require ffmpeg to be installed to save video.
         if (config.saveVideo && !checkFfmpeg()) {
@@ -114,6 +126,52 @@ export function decorateCommand(command: Command, version: string) {
         };
         await mcpServer.start(factory, config.server);
       });
+}
+
+async function listToolsAndExit(config: FullConfig, format: string) {
+  const browserContextFactory = contextFactory(config);
+  const backend = new BrowserServerBackend(config, browserContextFactory);
+  const tools = await backend.listTools();
+
+  switch (format) {
+    case 'json':
+      console.log(JSON.stringify(tools, null, 2));
+      break;
+    case 'table':
+      console.log(formatToolsAsTable(tools));
+      break;
+    case 'tsv':
+      console.log(formatToolsAsTsv(tools));
+      break;
+    default:
+      console.error(`Unknown format: ${format}. Valid formats: json, table, tsv`);
+      process.exit(1);
+  }
+  process.exit(0);
+}
+
+function formatToolsAsTable(tools: mcpServer.Tool[]): string {
+  const maxNameLen = Math.max(20, ...tools.map(t => t.name.length));
+  const maxDescLen = 60;
+
+  const header = `${'Name'.padEnd(maxNameLen)} | Description`;
+  const separator = '-'.repeat(maxNameLen) + '-+-' + '-'.repeat(maxDescLen);
+
+  const rows = tools.map(tool => {
+    const name = tool.name.padEnd(maxNameLen);
+    const desc = (tool.description || '').substring(0, maxDescLen).padEnd(maxDescLen);
+    return `${name} | ${desc}`;
+  });
+
+  return [header, separator, ...rows].join('\n');
+}
+
+function formatToolsAsTsv(tools: mcpServer.Tool[]): string {
+  const header = 'name\tdescription';
+  const rows = tools.map(tool =>
+    `${tool.name}\t${tool.description || ''}`
+  );
+  return [header, ...rows].join('\n');
 }
 
 function checkFfmpeg(): boolean {

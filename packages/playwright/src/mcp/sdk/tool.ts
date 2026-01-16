@@ -27,19 +27,50 @@ export type ToolSchema<Input extends z.Schema> = {
   type: 'input' | 'assertion' | 'action' | 'readOnly';
 };
 
-export function toMcpTool(tool: ToolSchema<any>): mcpServer.Tool {
+function stripDescriptions(schema: any): any {
+  if (!schema || typeof schema !== 'object')
+    return schema;
+
+  const result = Array.isArray(schema) ? [...schema] : { ...schema };
+
+  // Remove description field
+  if ('description' in result)
+    delete result.description;
+
+  // Recursively process nested objects
+  for (const key in result) {
+    if (typeof result[key] === 'object' && result[key] !== null)
+      result[key] = stripDescriptions(result[key]);
+  }
+
+  return result;
+}
+
+export function toMcpTool(tool: ToolSchema<any>, options?: { minify?: boolean }): mcpServer.Tool {
   const readOnly = tool.type === 'readOnly' || tool.type === 'assertion';
-  return {
+  let inputSchema = zodToJsonSchema(tool.inputSchema, { strictUnions: true }) as mcpServer.Tool['inputSchema'];
+
+  // Strip descriptions from inputSchema if minifying
+  if (options?.minify)
+    inputSchema = stripDescriptions(inputSchema);
+
+  const result: mcpServer.Tool = {
     name: tool.name,
-    description: tool.description,
-    inputSchema: zodToJsonSchema(tool.inputSchema, { strictUnions: true }) as mcpServer.Tool['inputSchema'],
-    annotations: {
+    description: options?.minify ? '' : tool.description,
+    inputSchema,
+  };
+
+  // Only include annotations if not minifying
+  if (!options?.minify) {
+    result.annotations = {
       title: tool.title,
       readOnlyHint: readOnly,
       destructiveHint: !readOnly,
       openWorldHint: true,
-    },
-  };
+    };
+  }
+
+  return result;
 }
 
 export function defineToolSchema<Input extends z.Schema>(tool: ToolSchema<Input>): ToolSchema<Input> {

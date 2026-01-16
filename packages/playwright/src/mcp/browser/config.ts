@@ -69,6 +69,10 @@ export type CLIOptions = {
   userAgent?: string;
   userDataDir?: string;
   viewportSize?: ViewportSize;
+  minifyTools?: boolean;
+  toolAllowList?: string[];
+  toolDenyList?: string[];
+  listTools?: string | boolean;
 };
 
 export const defaultConfig: FullConfig = {
@@ -262,6 +266,11 @@ export function configFromCLIOptions(cliOptions: CLIOptions): Config {
       action: cliOptions.timeoutAction,
       navigation: cliOptions.timeoutNavigation,
     },
+    tools: {
+      minify: cliOptions.minifyTools,
+      allowList: cliOptions.toolAllowList,
+      denyList: cliOptions.toolDenyList,
+    },
   };
 
   return result;
@@ -311,6 +320,9 @@ function configFromEnv(): Config {
   options.userAgent = envToString(process.env.PLAYWRIGHT_MCP_USER_AGENT);
   options.userDataDir = envToString(process.env.PLAYWRIGHT_MCP_USER_DATA_DIR);
   options.viewportSize = resolutionParser('--viewport-size', process.env.PLAYWRIGHT_MCP_VIEWPORT_SIZE);
+  options.minifyTools = envToBoolean(process.env.PLAYWRIGHT_MCP_MINIFY_TOOLS);
+  options.toolAllowList = commaSeparatedList(process.env.PLAYWRIGHT_MCP_TOOL_ALLOW_LIST);
+  options.toolDenyList = commaSeparatedList(process.env.PLAYWRIGHT_MCP_TOOL_DENY_LIST);
   return configFromCLIOptions(options);
 }
 
@@ -412,6 +424,10 @@ function mergeConfig(base: FullConfig, overrides: Config): FullConfig {
     timeouts: {
       ...pickDefined(base.timeouts),
       ...pickDefined(overrides.timeouts),
+    },
+    tools: {
+      ...pickDefined(base.tools),
+      ...pickDefined(overrides.tools),
     },
   } as FullConfig;
 }

@@ -60,5 +60,22 @@ export const browserTools: Tool<any>[] = [
 ];
 
 export function filteredTools(config: FullConfig) {
-  return browserTools.filter(tool => tool.capability.startsWith('core') || config.capabilities?.includes(tool.capability));
+  // Stage 1: Filter by capabilities (existing logic)
+  let tools = browserTools.filter(tool =>
+    tool.capability.startsWith('core') || config.capabilities?.includes(tool.capability)
+  );
+
+  // Stage 2: Apply allow-list if present (whitelist)
+  if (config.tools?.allowList && config.tools.allowList.length > 0) {
+    const allowSet = new Set(config.tools.allowList);
+    tools = tools.filter(tool => allowSet.has(tool.schema.name));
+  }
+
+  // Stage 3: Apply deny-list (blacklist - takes precedence)
+  if (config.tools?.denyList && config.tools.denyList.length > 0) {
+    const denySet = new Set(config.tools.denyList);
+    tools = tools.filter(tool => !denySet.has(tool.schema.name));
+  }
+
+  return tools;
 }

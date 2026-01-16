@@ -200,4 +200,24 @@ export type Config = {
    * By default (false), file uploads are restricted to paths within the MCP roots only.
    */
   allowUnrestrictedFileAccess?: boolean;
+
+  /**
+   * Tool filtering and optimization options
+   */
+  tools?: {
+    /**
+     * Strip descriptions and annotations to reduce token usage.
+     */
+    minify?: boolean;
+
+    /**
+     * List of tool names to make available. If specified, only these tools will be exposed.
+     */
+    allowList?: string[];
+
+    /**
+     * List of tool names to exclude from MCP tool/list output.
+     */
+    denyList?: string[];
+  };
 };
