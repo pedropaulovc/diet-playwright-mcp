@@ -1,0 +1,14 @@
+{
+  "name": "diet-playwright-mcp",
+  "description": "Optimized browser automation MCP server with viewport filtering support. Enables Claude to interact with web pages while reducing token usage by up to 60% through intelligent viewport-aware snapshots. Supports screenshots, form filling, element interaction, and automated testing workflows.",
+  "author": {
+    "name": "Pedro Paulo Amorim",
+    "url": "https://github.com/pedropaulovc"
+  },
+  "homepage": "https://github.com/pedropaulovc/diet-playwright-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pedropaulovc/diet-playwright-mcp"
+  },
+  "version": "1.58.0-next"
+}

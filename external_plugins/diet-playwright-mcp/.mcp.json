@@ -1,0 +1,6 @@
+{
+  "diet-playwright-mcp": {
+    "command": "npx",
+    "args": ["@pedropaulovc/diet-playwright-mcp@next", "mcp"]
+  }
+}
