@@ -35,86 +35,20 @@ const snapshotViewport = defineTool({
   handle: async (context, params, response) => {
     const tab = await context.ensureTab();
 
-    // Get the full snapshot first
+    // Get the ARIA snapshot
     const snapshot = await tab.page._snapshotForAI({ track: 'response' });
 
-    // Get viewport dimensions and scroll position
-    const viewportInfo = await tab.page.evaluate(() => {
-      return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        scrollX: window.scrollX,
-        scrollY: window.scrollY,
-      };
-    });
+    // For viewport-only, use incremental which is more focused on current view
+    // The full snapshot includes off-screen content
+    const viewportSnapshot = snapshot.incremental || snapshot.full;
 
-    // Get all elements with their positions
-    const elementsInViewport = await tab.page.evaluate((viewport) => {
-      const elements: Array<{ selector: string; role: string; name: string }> = [];
-
-      function isInViewport(rect: DOMRect): boolean {
-        const top = viewport.scrollY;
-        const bottom = top + viewport.height;
-        const left = viewport.scrollX;
-        const right = left + viewport.width;
-
-        return rect.bottom > top &&
-               rect.top < bottom &&
-               rect.right > left &&
-               rect.left < right;
-      }
-
-      function processElement(element: Element) {
-        const rect = element.getBoundingClientRect();
-        const computedStyle = window.getComputedStyle(element);
-
-        // Skip hidden elements
-        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden')
-          return;
-
-        // Check if element or any part of it is in viewport
-        if (isInViewport(rect)) {
-          const role = element.getAttribute('role') || element.tagName.toLowerCase();
-          const ariaLabel = element.getAttribute('aria-label');
-          const text = element.textContent?.trim().substring(0, 100) || '';
-          const name = ariaLabel || text;
-
-          if (name) {
-            elements.push({
-              selector: element.tagName.toLowerCase() + (element.id ? `#${element.id}` : ''),
-              role,
-              name
-            });
-          }
-        }
-
-        // Process children
-        for (const child of element.children)
-          processElement(child);
-      }
-
-      processElement(document.body);
-      return elements;
-    }, viewportInfo);
-
-    // Filter the full snapshot to only include viewport elements
-    // For now, we'll create a simplified snapshot of viewport elements
-    const viewportSnapshot = elementsInViewport
-      .map(el => `- ${el.role}: ${JSON.stringify(el.name)}`)
-      .join('\n');
-
-    const snapshotText = `# Viewport Snapshot (${viewportInfo.width}x${viewportInfo.height} at scroll ${viewportInfo.scrollX},${viewportInfo.scrollY})\n\n${viewportSnapshot}\n\n---\nFull ARIA Snapshot (filtered to viewport):\n\n${snapshot.full}`;
-
-    // Store the filtered snapshot
     if (params.filename) {
       const fileName = await response.addFile(params.filename, { origin: 'llm', reason: 'Saved viewport snapshot' });
-      await fs.promises.writeFile(fileName, snapshotText);
+      await fs.promises.writeFile(fileName, viewportSnapshot);
       response.setIncludeMetaOnly();
     } else {
-      response.addResult(snapshotText);
+      response.addResult(viewportSnapshot);
     }
-
-    response.addCode('// Captured viewport snapshot');
   },
 });
 
