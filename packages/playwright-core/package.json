@@ -1,12 +1,12 @@
 {
-  "name": "playwright-core",
+  "name": "@pedropaulovc/diet-playwright-core-mcp",
   "version": "1.58.0-next",
-  "description": "A high-level API to automate web browsers",
+  "description": "A high-level API to automate web browsers with MCP support",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright.git"
+    "url": "git+https://github.com/pedropaulovc/diet-playwright-mcp.git"
   },
-  "homepage": "https://playwright.dev",
+  "homepage": "https://github.com/pedropaulovc/diet-playwright-mcp",
   "engines": {
     "node": ">=18"
   },
