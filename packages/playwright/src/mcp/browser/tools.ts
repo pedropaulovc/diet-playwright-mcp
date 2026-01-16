@@ -30,6 +30,7 @@ import pdf from './tools/pdf';
 import runCode from './tools/runCode';
 import snapshot from './tools/snapshot';
 import screenshot from './tools/screenshot';
+import snapshotViewport from './tools/snapshotViewport';
 import tabs from './tools/tabs';
 import tracing from './tools/tracing';
 import wait from './tools/wait';
@@ -55,6 +56,7 @@ export const browserTools: Tool<any>[] = [
   ...runCode,
   ...screenshot,
   ...snapshot,
+  ...snapshotViewport,
   ...tabs,
   ...tracing,
   ...wait,
