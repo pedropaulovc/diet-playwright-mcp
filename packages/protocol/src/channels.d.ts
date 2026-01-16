@@ -2516,10 +2516,12 @@ export type PageRequestsResult = {
 };
 export type PageSnapshotForAIParams = {
   track?: string,
+  viewportOnly?: boolean,
   timeout: number,
 };
 export type PageSnapshotForAIOptions = {
   track?: string,
+  viewportOnly?: boolean,
 };
 export type PageSnapshotForAIResult = {
   full: string,

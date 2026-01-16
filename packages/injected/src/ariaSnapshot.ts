@@ -134,6 +134,12 @@ export function generateAriaTree(rootElement: Element, publicOptions: AriaTreeOp
 
     const childAriaNode = visible ? toAriaNode(element, options) : null;
     if (childAriaNode) {
+      // Skip elements not in viewport when viewportOnly is enabled
+      if (options.viewportOnly === true && !childAriaNode.box.inViewport) {
+        // Don't add to tree, don't process children
+        return;
+      }
+
       if (childAriaNode.ref) {
         snapshot.elements.set(childAriaNode.ref, element);
         snapshot.refs.set(element, childAriaNode.ref);

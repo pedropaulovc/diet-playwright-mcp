@@ -1930,6 +1930,8 @@ Page:
       parameters:
         # When track is present, an incremental snapshot is returned when possible.
         track: string?
+        # When viewportOnly is true, only elements visible in the viewport are included.
+        viewportOnly: boolean?
         timeout: float
       returns:
         full: string

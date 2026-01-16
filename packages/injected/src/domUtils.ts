@@ -127,28 +127,19 @@ function isElementClippedByAncestor(element: Element, elementRect: DOMRect): boo
     if (hasScrollableY || hasScrollableX) {
       const ancestorRect = ancestor.getBoundingClientRect();
 
-      // An element is clipped if it's completely outside the ancestor's visible area
-      // We need to check if any part of the element is outside the ancestor's bounds
-      const isClippedVertically = hasScrollableY && (
-        elementRect.bottom <= ancestorRect.top ||
-        elementRect.top >= ancestorRect.bottom
-      );
-
-      const isClippedHorizontally = hasScrollableX && (
-        elementRect.right <= ancestorRect.left ||
-        elementRect.left >= ancestorRect.right
-      );
-
-      if (isClippedVertically || isClippedHorizontally) {
-        return true; // Element is completely clipped
+      // Check vertical clipping
+      if (hasScrollableY) {
+        // Element is completely outside vertically - use a larger tolerance to keep nearby items
+        const tolerance = 200; // pixels - allows items just outside viewport to remain
+        if (elementRect.bottom <= ancestorRect.top - tolerance ||
+            elementRect.top >= ancestorRect.bottom + tolerance) {
+          return true;
+        }
       }
 
-      // Additionally check if element is partially clipped (majority outside)
-      if (hasScrollableY) {
-        const visibleHeight = Math.min(elementRect.bottom, ancestorRect.bottom) - Math.max(elementRect.top, ancestorRect.top);
-        const totalHeight = elementRect.bottom - elementRect.top;
-        // If less than 50% of the element is visible, consider it clipped
-        if (totalHeight > 0 && visibleHeight / totalHeight < 0.5) {
+      // Check horizontal clipping
+      if (hasScrollableX) {
+        if (elementRect.right <= ancestorRect.left || elementRect.left >= ancestorRect.right) {
           return true;
         }
       }
@@ -181,10 +172,13 @@ export function computeBox(element: Element) {
   const visible = rect.width > 0 && rect.height > 0;
 
   // Check viewport intersection
+  const viewportHeight = element.ownerDocument.defaultView!.innerHeight;
+  const viewportWidth = element.ownerDocument.defaultView!.innerWidth;
+
   const inBrowserViewport = visible && (
-    rect.top < element.ownerDocument.defaultView!.innerHeight &&
+    rect.top < viewportHeight &&
     rect.bottom > 0 &&
-    rect.left < element.ownerDocument.defaultView!.innerWidth &&
+    rect.left < viewportWidth &&
     rect.right > 0
   );
 
